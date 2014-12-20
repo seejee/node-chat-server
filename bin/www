@@ -1,9 +1,15 @@
 #!/usr/bin/env node
+var CoffeeScript = require('coffee-script');
+CoffeeScript.register();
+
 var debug = require('debug')('node-server');
-var app = require('../app');
+var appData = require('../bootstrap');
+
+var app    = appData.app;
+var server = appData.server;
 
 app.set('port', process.env.PORT || 3000);
 
-var server = app.listen(app.get('port'), function() {
+server.listen(app.get('port'), function() {
   debug('Express server listening on port ' + server.address().port);
 });

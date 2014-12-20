@@ -4,6 +4,8 @@ var favicon      = require('serve-favicon');
 var logger       = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser   = require('body-parser');
+var faye         = require('faye');
+var http         = require('http');
 
 var routes = require('./routes/index');
 var users  = require('./routes/users');
@@ -56,5 +58,18 @@ app.use(function(err, req, res, next) {
     });
 });
 
+// boot faye server
+var server = http.createServer(app),
+    bayeux = new faye.NodeAdapter({mount: '/faye', timeout: 45});
 
-module.exports = app;
+bayeux.attach(server);
+
+var faye = bayeux.getClient();
+
+var PresenceChannel = require('./channels/presence');
+new PresenceChannel(faye).attach();
+
+module.exports = {
+  app: app,
+  server: server
+};
