@@ -26,16 +26,21 @@ class PresenceChannel
     @studentQueue = new StudentQueue
 
   attach: ->
-    @faye.subscribe '/presence/connect', (data) =>
-      if data.role is 'teacher'
-        console.log "Teacher #{data.userId} arrived."
-        @teachers.add data.userId
-      else
-        console.log "Student #{data.userId} arrived."
-        @studentQueue.enqueue data.userId
+    @faye.subscribe '/presence/connect', @handleNewUser.bind(this)
 
-      @faye.publish '/presence/status',
-        teachers: @teachers.length()
-        students: @studentQueue.length()
+  handleNewUser: (payload) ->
+    if payload.role is 'teacher'
+      console.log "Teacher #{payload.userId} arrived."
+      @teachers.add payload.userId
+    else
+      console.log "Student #{payload.userId} arrived."
+      @studentQueue.enqueue payload.userId
+
+    @publishStatus()
+
+  publishStatus: ->
+    @faye.publish '/presence/status',
+      teachers: @teachers.length()
+      students: @studentQueue.length()
 
 module.exports = PresenceChannel
