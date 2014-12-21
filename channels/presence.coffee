@@ -8,6 +8,9 @@ class TeacherRoster
     return if _.any @teachers, (t) -> t.id is teacher.id
     @teachers.push teacher
 
+  find: (id) ->
+    _.find @teachers, (t) -> t.id is id
+
   length: ->
     @teachers.length
 
@@ -27,15 +30,23 @@ class StudentRoster
      .filter((s) -> s.teacherId is null)
      .value()
 
+  claimNext: (teacher) ->
+    student = @queued()[0]
+
+    if student?
+      student.teacherId = teacher.id
+      teacher.students.push student.id
+      student
+
 class PresenceChannel
   constructor: (@faye) ->
     @teachers = new TeacherRoster
     @students = new StudentRoster
 
   attach: ->
-    @faye.subscribe '/presence/connect/teacher', @onNewTeacher.bind(this)
-    @faye.subscribe '/presence/connect/student', @onNewStudent.bind(this)
-    @faye.subscribe '/presence/claimStudent',    @onClaimStudent.bind(this)
+    @faye.subscribe '/presence/teacher/connect', @onNewTeacher.bind(this)
+    @faye.subscribe '/presence/student/connect', @onNewStudent.bind(this)
+    @faye.subscribe '/presence/claim_student',   @onClaimStudent.bind(this)
 
   onNewTeacher: (payload) ->
     console.log "Teacher #{payload.userId} arrived."
@@ -56,6 +67,22 @@ class PresenceChannel
     @publishStatus()
 
   onClaimStudent: (payload) ->
+    teacher = @teachers.find(payload.teacherId)
+    student = @students.claimNext teacher
+
+    if student?
+      @publishNewChat teacher, student
+
+  publishNewChat: (teacher, student) ->
+    teacherChannel = "/presence/new_chat/teacher/#{teacher.id}"
+    studentChannel = "/presence/new_chat/student/#{student.id}"
+    chatChannel    = "/chat/teacher/#{teacher.id}/student/#{student.id}"
+
+    @faye.publish teacherChannel,
+      chatChannel: chatChannel
+
+    @faye.publish studentChannel,
+      chatChannel: chatChannel
 
   publishStatus: ->
     @faye.publish '/presence/status',
