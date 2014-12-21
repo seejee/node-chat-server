@@ -1,46 +1,68 @@
+_ = require 'lodash'
+
 class TeacherRoster
   constructor: ->
     @teachers = []
 
   add: (teacher) ->
-    return if @teachers.indexOf(teacher) != -1
+    return if _.any @teachers, (t) -> t.id is teacher.id
     @teachers.push teacher
 
   length: ->
     @teachers.length
 
-class StudentQueue
+class StudentRoster
   constructor: ->
     @students = []
 
-  enqueue: (student) ->
-    return if @students.indexOf(student) != -1
+  add: (student) ->
+    return if _.any @students, (s) -> s.id is student.id
     @students.push student
 
   length: ->
     @students.length
 
+  queued: ->
+    _.chain(@students)
+     .filter((s) -> s.teacherId is null)
+     .value()
+
 class PresenceChannel
   constructor: (@faye) ->
-    @teachers     = new TeacherRoster
-    @studentQueue = new StudentQueue
+    @teachers = new TeacherRoster
+    @students = new StudentRoster
 
   attach: ->
-    @faye.subscribe '/presence/connect', @handleNewUser.bind(this)
+    @faye.subscribe '/presence/connect/teacher', @onNewTeacher.bind(this)
+    @faye.subscribe '/presence/connect/student', @onNewStudent.bind(this)
+    @faye.subscribe '/presence/claimStudent',    @onClaimStudent.bind(this)
 
-  handleNewUser: (payload) ->
-    if payload.role is 'teacher'
-      console.log "Teacher #{payload.userId} arrived."
-      @teachers.add payload.userId
-    else
-      console.log "Student #{payload.userId} arrived."
-      @studentQueue.enqueue payload.userId
+  onNewTeacher: (payload) ->
+    console.log "Teacher #{payload.userId} arrived."
+
+    @teachers.add
+      id:       payload.userId
+      students: []
 
     @publishStatus()
 
+  onNewStudent: (payload) ->
+    console.log "Student #{payload.userId} arrived."
+
+    @students.add
+      id:        payload.userId
+      teacherId: null
+
+    @publishStatus()
+
+  onClaimStudent: (payload) ->
+
   publishStatus: ->
     @faye.publish '/presence/status',
-      teachers: @teachers.length()
-      students: @studentQueue.length()
+      teachers:
+        total:    @teachers.length()
+      students:
+        total:    @students.length()
+        waiting:  @students.queued().length
 
 module.exports = PresenceChannel
