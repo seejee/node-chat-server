@@ -4,7 +4,7 @@ var favicon      = require('serve-favicon');
 var logger       = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser   = require('body-parser');
-var faye         = require('faye');
+var Faye         = require('faye');
 var http         = require('http');
 
 var routes = require('./routes/index');
@@ -57,8 +57,8 @@ app.use(function(err, req, res, next) {
 });
 
 // boot faye server
-var server = http.createServer(app),
-    bayeux = new faye.NodeAdapter({mount: '/faye', timeout: 45});
+var server = http.createServer(),
+    bayeux = new Faye.NodeAdapter({mount: '/faye', timeout: 45});
 
 bayeux.attach(server);
 
