@@ -1,4 +1,5 @@
-_ = require 'lodash'
+_    = require 'lodash'
+uuid = require 'node-uuid'
 
 class TeacherRoster
   constructor: ->
@@ -38,10 +39,29 @@ class StudentRoster
       teacher.students.push student.id
       student
 
+class ChatLog
+  constructor: ->
+    @chats = {}
+
+  new: (teacherId, studentId) ->
+    chat =
+      id:        uuid.v4()
+      teacherId: teacherId
+      studentId: studentId
+      messages:  []
+
+    @chats[chat.id] = chat
+
+    chat
+
+  find: (id) ->
+    @chats[id]
+
 class PresenceChannel
   constructor: (@faye) ->
     @teachers = new TeacherRoster
     @students = new StudentRoster
+    @chatLog  = new ChatLog
 
   attach: ->
     @faye.subscribe '/presence/teacher/connect', @onNewTeacher.bind(this)
@@ -69,14 +89,15 @@ class PresenceChannel
   onClaimStudent: (payload) ->
     teacher = @teachers.find(payload.teacherId)
     student = @students.claimNext teacher
+    chat    = @chatLog.new teacher, student
 
     if student?
-      @publishNewChat teacher, student
+      @publishNewChat chat, teacher, student
 
-  publishNewChat: (teacher, student) ->
+  publishNewChat: (chat, teacher, student) ->
     teacherChannel = "/presence/new_chat/teacher/#{teacher.id}"
     studentChannel = "/presence/new_chat/student/#{student.id}"
-    chatChannel    = "/chat/teacher/#{teacher.id}/student/#{student.id}"
+    chatChannel    = "/chat/#{chat.id}"
 
     @faye.publish teacherChannel,
       chatChannel: chatChannel
