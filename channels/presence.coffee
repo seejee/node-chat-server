@@ -45,7 +45,7 @@ class PresenceChannel
   onClaimStudent: (payload) ->
     teacher = @teachers.find(payload.teacherId)
 
-    if teacher.students.length <= 5
+    if teacher.students.length < 5
       student = @students.next()
 
       if student?
@@ -79,6 +79,7 @@ class PresenceChannel
         total:     @students.length()
         chatting:  @students.chatting().length
         waiting:   @students.queued().length
+        finished:  @students.finished().length
 
     @faye.publish '/presence/status', data
 

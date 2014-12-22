@@ -13,7 +13,7 @@ class StudentRoster
 
   remove: (studentId) ->
     student = @find studentId
-    index   = @students.indexOf(studentId)
+    index   = @students.indexOf(student)
     @students.splice(index, 1)
 
   length: ->
@@ -27,6 +27,11 @@ class StudentRoster
   chatting: ->
     _.chain(@students)
      .filter((s) -> s.status is 'chatting')
+     .value()
+
+  finished: ->
+    _.chain(@students)
+     .filter((s) -> s.status is 'finished')
      .value()
 
   next: ->

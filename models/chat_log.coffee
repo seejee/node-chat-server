@@ -5,7 +5,7 @@ class ChatLog
     @chats    = {}
 
   new: (teacher, student) ->
-    id   = uuid.v4()
+    id   = uuid.v1()
 
     chat =
       id:        id
