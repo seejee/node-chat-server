@@ -1,61 +1,6 @@
-_    = require 'lodash'
-uuid = require 'node-uuid'
-
-class TeacherRoster
-  constructor: ->
-    @teachers = []
-
-  add: (teacher) ->
-    return if _.any @teachers, (t) -> t.id is teacher.id
-    @teachers.push teacher
-
-  find: (id) ->
-    _.find @teachers, (t) -> t.id is id
-
-  length: ->
-    @teachers.length
-
-class StudentRoster
-  constructor: ->
-    @students = []
-
-  add: (student) ->
-    return if _.any @students, (s) -> s.id is student.id
-    @students.push student
-
-  length: ->
-    @students.length
-
-  queued: ->
-    _.chain(@students)
-     .filter((s) -> s.teacherId is null)
-     .value()
-
-  claimNext: (teacher) ->
-    student = @queued()[0]
-
-    if student?
-      student.teacherId = teacher.id
-      teacher.students.push student.id
-      student
-
-class ChatLog
-  constructor: ->
-    @chats = {}
-
-  new: (teacherId, studentId) ->
-    chat =
-      id:        uuid.v4()
-      teacherId: teacherId
-      studentId: studentId
-      messages:  []
-
-    @chats[chat.id] = chat
-
-    chat
-
-  find: (id) ->
-    @chats[id]
+TeacherRoster = require '../models/teacher_roster'
+StudentRoster = require '../models/student_roster'
+ChatLog       = require '../models/chat_log'
 
 class PresenceChannel
   constructor: (@faye) ->
