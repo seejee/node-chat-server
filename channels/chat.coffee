@@ -8,6 +8,7 @@ class ChatChannel
     chat = @findChat()
     @faye.subscribe chat.teacherChannels.send, @onTeacherMessage.bind(this)
     @faye.subscribe chat.studentChannels.send, @onStudentMessage.bind(this)
+    @faye.subscribe chat.teacherChannels.terminate, @onTerminateChat.bind(this)
 
   onTeacherMessage: (payload) ->
     chat = @findChat()
@@ -20,5 +21,11 @@ class ChatChannel
     @chatLog.addStudentMessage chat, payload.message
 
     @faye.publish chat.teacherChannels.receive, payload
+
+  onTerminateChat: (payload) ->
+    chat = @findChat()
+    @chatLog.finishChat chat
+
+    @faye.publish chat.studentChannels.terminate, {}
 
 module.exports = ChatChannel

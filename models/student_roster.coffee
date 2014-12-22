@@ -8,6 +8,14 @@ class StudentRoster
     return if _.any @students, (s) -> s.id is student.id
     @students.push student
 
+  find: (studentId) ->
+    _.find @students, (s) -> s.id is studentId
+
+  remove: (studentId) ->
+    student = @find studentId
+    index   = @students.indexOf(studentId)
+    @students.splice(index, 1)
+
   length: ->
     @students.length
 

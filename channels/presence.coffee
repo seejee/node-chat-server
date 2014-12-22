@@ -11,9 +11,10 @@ class PresenceChannel
     @chatLog  = new ChatLog
 
   attach: ->
-    @faye.subscribe '/presence/teacher/connect', @onNewTeacher.bind(this)
-    @faye.subscribe '/presence/student/connect', @onNewStudent.bind(this)
-    @faye.subscribe '/presence/claim_student',   @onClaimStudent.bind(this)
+    @faye.subscribe '/presence/teacher/connect',    @onNewTeacher.bind(this)
+    @faye.subscribe '/presence/student/connect',    @onNewStudent.bind(this)
+    @faye.subscribe '/presence/claim_student',      @onClaimStudent.bind(this)
+    @faye.subscribe '/presence/student/disconnect', @onStudentDisconnect.bind(this)
 
   onNewTeacher: (payload) ->
     console.log "Teacher #{payload.userId} arrived."
@@ -30,6 +31,13 @@ class PresenceChannel
     @students.add
       id:        payload.userId
       teacherId: null
+
+    @publishStatus()
+
+  onStudentDisconnect: (payload) ->
+    console.log "Student #{payload.userId} left."
+
+    @students.remove payload.userId
 
     @publishStatus()
 
@@ -51,12 +59,14 @@ class PresenceChannel
     studentChannel = "/presence/new_chat/student/#{student.id}"
 
     @faye.publish teacherChannel,
-      sendChannel:    chat.teacherChannels.send
-      receiveChannel: chat.teacherChannels.receive
+      sendChannel:      chat.teacherChannels.send
+      receiveChannel:   chat.teacherChannels.receive
+      terminateChannel: chat.teacherChannels.terminate
 
     @faye.publish studentChannel,
-      sendChannel:    chat.studentChannels.send
-      receiveChannel: chat.studentChannels.receive
+      sendChannel:      chat.studentChannels.send
+      receiveChannel:   chat.studentChannels.receive
+      terminateChannel: chat.studentChannels.terminate
 
   publishStatus: ->
     @faye.publish '/presence/status',
