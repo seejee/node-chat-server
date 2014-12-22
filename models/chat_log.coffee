@@ -4,23 +4,30 @@ class ChatLog
   constructor: ->
     @chats    = {}
 
-  new: (teacherId, studentId) ->
+  new: (teacher, student) ->
     id   = uuid.v4()
 
     chat =
       id:        id
-      teacherId: teacherId
-      studentId: studentId
+      teacherId: teacher.id
+      studentId: student.id
       status:    'active'
       messages:  []
       teacherChannels:
         send:      "/chat/#{id}/teacher/send"
         receive:   "/chat/#{id}/teacher/receive"
         terminate: "/chat/#{id}/teacher/terminate"
+        joined:    "/chat/#{id}/teacher/joined"
       studentChannels:
         send:    "/chat/#{id}/student/send"
         receive: "/chat/#{id}/student/receive"
         terminate: "/chat/#{id}/student/terminate"
+        joined:    "/chat/#{id}/student/joined"
+
+    student.status    = 'chatting'
+    student.teacherId = teacher.id
+
+    teacher.students.push student.id
 
     @chats[chat.id] = chat
 
@@ -38,8 +45,14 @@ class ChatLog
       message: message
       timestamp: Date.now()
 
-  finishChat: (chat) ->
-    chat.status = 'finished'
+  finishChat: (chat, teacher, student) ->
+    chat.status       = 'finished'
+
+    student.teacherId = null
+    student.status    = 'finished'
+
+    index = teacher.students.indexOf(student.id)
+    teacher.students.splice index, 1
 
   find: (id) ->
     @chats[id]

@@ -30,6 +30,7 @@ class PresenceChannel
 
     @students.add
       id:        payload.userId
+      status:    'waiting'
       teacherId: null
 
     @publishStatus()
@@ -43,16 +44,16 @@ class PresenceChannel
 
   onClaimStudent: (payload) ->
     teacher = @teachers.find(payload.teacherId)
-    student = @students.claimNext teacher
-    chat    = @chatLog.new teacher.id, student.id
 
-    if student?
-      channel = new ChatChannel @faye, @chatLog
-      channel.attach chat.id
+    if teacher.students.length <= 5
+      student = @students.next()
 
-      #TODO: clean up channel when it's done
+      if student?
+        chat    = @chatLog.new teacher, student
+        channel = new ChatChannel @faye, @chatLog, @teachers, @students
+        channel.attach chat.id
 
-      @publishNewChat chat, teacher, student
+        @publishNewChat chat, teacher, student
 
   publishNewChat: (chat, teacher, student) ->
     teacherChannel = "/presence/new_chat/teacher/#{teacher.id}"
@@ -62,18 +63,23 @@ class PresenceChannel
       sendChannel:      chat.teacherChannels.send
       receiveChannel:   chat.teacherChannels.receive
       terminateChannel: chat.teacherChannels.terminate
+      joinedChannel:    chat.teacherChannels.joined
 
     @faye.publish studentChannel,
       sendChannel:      chat.studentChannels.send
       receiveChannel:   chat.studentChannels.receive
       terminateChannel: chat.studentChannels.terminate
+      joinedChannel:    chat.studentChannels.joined
 
   publishStatus: ->
-    @faye.publish '/presence/status',
+    data =
       teachers:
         total:    @teachers.length()
       students:
-        total:    @students.length()
-        waiting:  @students.queued().length
+        total:     @students.length()
+        chatting:  @students.chatting().length
+        waiting:   @students.queued().length
+
+    @faye.publish '/presence/status', data
 
 module.exports = PresenceChannel

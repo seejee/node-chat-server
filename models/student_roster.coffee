@@ -21,15 +21,15 @@ class StudentRoster
 
   queued: ->
     _.chain(@students)
-     .filter((s) -> s.teacherId is null)
+     .filter((s) -> s.status is 'waiting')
      .value()
 
-  claimNext: (teacher) ->
-    student = @queued()[0]
+  chatting: ->
+    _.chain(@students)
+     .filter((s) -> s.status is 'chatting')
+     .value()
 
-    if student?
-      student.teacherId = teacher.id
-      teacher.students.push student.id
-      student
+  next: ->
+    @queued()[0]
 
 module.exports = StudentRoster
