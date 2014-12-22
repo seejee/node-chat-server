@@ -2,6 +2,8 @@ TeacherRoster = require '../models/teacher_roster'
 StudentRoster = require '../models/student_roster'
 ChatLog       = require '../models/chat_log'
 
+ChatChannel = require './chat'
+
 class PresenceChannel
   constructor: (@faye) ->
     @teachers = new TeacherRoster
@@ -34,21 +36,27 @@ class PresenceChannel
   onClaimStudent: (payload) ->
     teacher = @teachers.find(payload.teacherId)
     student = @students.claimNext teacher
-    chat    = @chatLog.new teacher, student
+    chat    = @chatLog.new teacher.id, student.id
 
     if student?
+      channel = new ChatChannel @faye, @chatLog
+      channel.attach chat.id
+
+      #TODO: clean up channel when it's done
+
       @publishNewChat chat, teacher, student
 
   publishNewChat: (chat, teacher, student) ->
     teacherChannel = "/presence/new_chat/teacher/#{teacher.id}"
     studentChannel = "/presence/new_chat/student/#{student.id}"
-    chatChannel    = "/chat/#{chat.id}"
 
     @faye.publish teacherChannel,
-      chatChannel: chatChannel
+      sendChannel:    chat.teacherChannels.send
+      receiveChannel: chat.teacherChannels.receive
 
     @faye.publish studentChannel,
-      chatChannel: chatChannel
+      sendChannel:    chat.studentChannels.send
+      receiveChannel: chat.studentChannels.receive
 
   publishStatus: ->
     @faye.publish '/presence/status',
