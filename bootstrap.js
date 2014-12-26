@@ -5,6 +5,7 @@ var logger       = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser   = require('body-parser');
 var Faye         = require('faye');
+var fayeRedis    = require('faye-redis-sharded');
 var http         = require('http');
 
 var routes = require('./routes/index');
@@ -58,7 +59,14 @@ app.use(function(err, req, res, next) {
 
 // boot faye server
 var server = http.createServer(),
-    bayeux = new Faye.NodeAdapter({mount: '/faye', timeout: 45});
+    bayeux = new Faye.NodeAdapter({
+      mount: '/faye',
+      timeout: 45,
+      //engine: {
+      //  type: fayeRedis,
+      //  hosts: ['localhost']
+      //}
+    });
 
 bayeux.attach(server);
 
