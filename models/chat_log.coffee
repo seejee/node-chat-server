@@ -16,13 +16,14 @@ class ChatLog
       teacherChannels:
         send:      "/chat/#{id}/teacher/send"
         receive:   "/chat/#{id}/teacher/receive"
-        terminate: "/chat/#{id}/teacher/terminate"
         joined:    "/chat/#{id}/teacher/joined"
+        terminate: "/chat/#{id}/teacher/terminate"
+        terminated: "/chat/#{id}/teacher/terminated"
       studentChannels:
         send:    "/chat/#{id}/student/send"
         receive: "/chat/#{id}/student/receive"
-        terminate: "/chat/#{id}/student/terminate"
         joined:    "/chat/#{id}/student/joined"
+        terminated: "/chat/#{id}/student/terminated"
 
     student.status    = 'chatting'
     student.teacherId = teacher.id

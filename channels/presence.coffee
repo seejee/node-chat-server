@@ -61,12 +61,13 @@ class PresenceChannel
       sendChannel:      chat.teacherChannels.send
       receiveChannel:   chat.teacherChannels.receive
       terminateChannel: chat.teacherChannels.terminate
+      terminatedChannel: chat.teacherChannels.terminated
       joinedChannel:    chat.teacherChannels.joined
 
     @faye.publish studentChannel,
       sendChannel:      chat.studentChannels.send
       receiveChannel:   chat.studentChannels.receive
-      terminateChannel: chat.studentChannels.terminate
+      terminatedChannel: chat.studentChannels.terminated
       joinedChannel:    chat.studentChannels.joined
 
   publishStatus: ->

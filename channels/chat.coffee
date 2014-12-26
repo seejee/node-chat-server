@@ -44,6 +44,7 @@ class ChatChannel
     @chatLog.finishChat chat, teacher, student
     @detach(chat)
 
-    @faye.publish chat.studentChannels.terminate, {}
+    @faye.publish chat.teacherChannels.terminated, {}
+    @faye.publish chat.studentChannels.terminated, {}
 
 module.exports = ChatChannel
