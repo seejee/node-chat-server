@@ -2,16 +2,15 @@ _ = require 'lodash'
 
 class TeacherRoster
   constructor: ->
-    @teachers = []
+    @teachers = {}
 
   add: (teacher) ->
-    return if _.any @teachers, (t) -> t.id is teacher.id
-    @teachers.push teacher
+    @teachers[teacher.id] = teacher
 
   find: (id) ->
-    _.find @teachers, (t) -> t.id is id
+    @teachers[id]
 
   length: ->
-    @teachers.length
+    _.keys(@teachers).length
 
 module.exports = TeacherRoster
