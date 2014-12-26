@@ -23,8 +23,6 @@ class PresenceChannel
       id:       payload.userId
       students: []
 
-    @publishStatus()
-
   onNewStudent: (payload) ->
     console.log "Student #{payload.userId} arrived."
 
@@ -75,11 +73,7 @@ class PresenceChannel
     data =
       teachers:
         total:    @teachers.length()
-      students:
-        total:     @students.length()
-        chatting:  @students.chatting().length
-        waiting:   @students.queued().length
-        finished:  @students.finished().length
+      students:   @students.stats()
 
     @faye.publish '/presence/status', data
 
