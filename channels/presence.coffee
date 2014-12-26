@@ -5,16 +5,16 @@ ChatLog       = require '../models/chat_log'
 ChatChannel = require './chat'
 
 class PresenceChannel
-  constructor: (@faye) ->
+  constructor: (@bayeux) ->
     @teachers = new TeacherRoster
     @students = new StudentRoster
     @chatLog  = new ChatLog
 
   attach: ->
-    @faye.subscribe '/presence/teacher/connect',    @onNewTeacher.bind(this)
-    @faye.subscribe '/presence/student/connect',    @onNewStudent.bind(this)
-    @faye.subscribe '/presence/claim_student',      @onClaimStudent.bind(this)
-    @faye.subscribe '/presence/student/disconnect', @onStudentDisconnect.bind(this)
+    @bayeux.getClient().subscribe '/presence/teacher/connect',    @onNewTeacher.bind(this)
+    @bayeux.getClient().subscribe '/presence/student/connect',    @onNewStudent.bind(this)
+    @bayeux.getClient().subscribe '/presence/claim_student',      @onClaimStudent.bind(this)
+    @bayeux.getClient().subscribe '/presence/student/disconnect', @onStudentDisconnect.bind(this)
 
   onNewTeacher: (payload) ->
     console.log "Teacher #{payload.userId} arrived."
@@ -37,7 +37,6 @@ class PresenceChannel
     console.log "Student #{payload.userId} left."
 
     @students.remove payload.userId
-
     @publishStatus()
 
   onClaimStudent: (payload) ->
@@ -48,7 +47,7 @@ class PresenceChannel
 
       if student?
         chat    = @chatLog.new teacher, student
-        channel = new ChatChannel @faye, @chatLog, @teachers, @students
+        channel = new ChatChannel @bayeux, @chatLog, @teachers, @students
         channel.attach chat.id
 
         @publishNewChat chat, teacher, student
@@ -57,14 +56,15 @@ class PresenceChannel
     teacherChannel = "/presence/new_chat/teacher/#{teacher.id}"
     studentChannel = "/presence/new_chat/student/#{student.id}"
 
-    @faye.publish teacherChannel,
+    @publish teacherChannel,
       sendChannel:      chat.teacherChannels.send
       receiveChannel:   chat.teacherChannels.receive
       terminateChannel: chat.teacherChannels.terminate
       terminatedChannel: chat.teacherChannels.terminated
       joinedChannel:    chat.teacherChannels.joined
+      readyChannel:     chat.channels.ready
 
-    @faye.publish studentChannel,
+    @publish studentChannel,
       sendChannel:      chat.studentChannels.send
       receiveChannel:   chat.studentChannels.receive
       terminatedChannel: chat.studentChannels.terminated
@@ -75,7 +75,11 @@ class PresenceChannel
       teachers:
         total:    @teachers.length()
       students:   @students.stats()
+      chats:      @chatLog.stats()
 
-    @faye.publish '/presence/status', data
+    @publish '/presence/status', data
+
+  publish: (channel, data) ->
+    @bayeux.getClient().publish channel, data
 
 module.exports = PresenceChannel

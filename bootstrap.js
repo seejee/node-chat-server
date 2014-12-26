@@ -62,10 +62,8 @@ var server = http.createServer(),
 
 bayeux.attach(server);
 
-var faye = bayeux.getClient();
-
 var PresenceChannel = require('./channels/presence');
-new PresenceChannel(faye).attach();
+new PresenceChannel(bayeux).attach();
 
 module.exports = {
   app: app,

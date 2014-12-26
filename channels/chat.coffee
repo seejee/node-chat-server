@@ -1,7 +1,7 @@
 _ = require 'lodash'
 
 class ChatChannel
-  constructor: (@faye, @chatLog, @teachers, @students) ->
+  constructor: (@bayeux, @chatLog, @teachers, @students) ->
     @subs = []
 
   findChat: ->
@@ -9,42 +9,54 @@ class ChatChannel
 
   attach: (@id) ->
     chat = @findChat()
-    @faye.subscribe chat.teacherChannels.send, @onTeacherMessage.bind(this)
-    @faye.subscribe chat.studentChannels.send, @onStudentMessage.bind(this)
-    @faye.subscribe chat.teacherChannels.terminate, @onTerminateChat.bind(this)
-    @faye.subscribe chat.studentChannels.joined, @onStudentJoined.bind(this)
+    @subscribe chat.teacherChannels.send, @onTeacherMessage.bind(this)
+    @subscribe chat.studentChannels.send, @onStudentMessage.bind(this)
+    @subscribe chat.teacherChannels.terminate, @onTerminateChat.bind(this)
+    @subscribe chat.studentChannels.joined, @onStudentJoined.bind(this)
+    @subscribe chat.teacherChannels.joined, @onTeacherJoined.bind(this)
 
-  detach: (chat) ->
-    @faye.unsubscribe chat.teacherChannels.send
-    @faye.unsubscribe chat.studentChannels.send
-    @faye.unsubscribe chat.teacherChannels.terminate
-    @faye.unsubscribe chat.studentChannels.joined
+  publish: (channel, data) ->
+    @bayeux.getClient().publish channel, data
+
+  subscribe: (channel, callback) ->
+    @bayeux.getClient().subscribe channel, callback
+
+  onTeacherJoined: (payload) ->
+    chat = @findChat()
+    chat.teacherEntered = true
+
+    if chat.studentEntered && chat.teacherEntered
+      @publish chat.channels.ready, {}
 
   onStudentJoined: (payload) ->
     chat = @findChat()
-    @faye.publish chat.teacherChannels.joined, payload
+    chat.studentEntered = true
+
+    if chat.studentEntered && chat.teacherEntered
+      @publish chat.channels.ready, {}
 
   onTeacherMessage: (payload) ->
     chat = @findChat()
     @chatLog.addTeacherMessage chat, payload.message
 
-    @faye.publish chat.studentChannels.receive, payload
+    @publish chat.studentChannels.receive, payload
 
   onStudentMessage: (payload) ->
     chat = @findChat()
     @chatLog.addStudentMessage chat, payload.message
 
-    @faye.publish chat.teacherChannels.receive, payload
+    @publish chat.teacherChannels.receive, payload
 
   onTerminateChat: (payload) ->
     chat = @findChat()
     teacher = @teachers.find chat.teacherId
     student = @students.find chat.studentId
+    console.log "terminating chat for student #{student.id}"
 
     @chatLog.finishChat chat, teacher, student
     @detach(chat)
 
-    @faye.publish chat.teacherChannels.terminated, {}
-    @faye.publish chat.studentChannels.terminated, {}
+    @publish chat.teacherChannels.terminated, {}
+    @publish chat.studentChannels.terminated, {}
 
 module.exports = ChatChannel

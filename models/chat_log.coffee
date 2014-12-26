@@ -1,3 +1,4 @@
+_    = require 'lodash'
 uuid = require 'node-uuid'
 
 class ChatLog
@@ -13,6 +14,8 @@ class ChatLog
       studentId: student.id
       status:    'active'
       messages:  []
+      channels:
+        ready:     "/chat/#{id}/ready"
       teacherChannels:
         send:      "/chat/#{id}/teacher/send"
         receive:   "/chat/#{id}/teacher/receive"
@@ -57,5 +60,11 @@ class ChatLog
 
   find: (id) ->
     @chats[id]
+
+  stats: ->
+    chats = _.values(@chats)
+
+    total:    chats.length
+    finished: _.filter(chats, (c) -> c.status is "finsihed").length
 
 module.exports = ChatLog
