@@ -51,10 +51,8 @@ class ChatChannel
     chat = @findChat()
     teacher = @teachers.find chat.teacherId
     student = @students.find chat.studentId
-    console.log "terminating chat for student #{student.id}"
 
     @chatLog.finishChat chat, teacher, student
-    @detach(chat)
 
     @publish chat.teacherChannels.terminated, {}
     @publish chat.studentChannels.terminated, {}

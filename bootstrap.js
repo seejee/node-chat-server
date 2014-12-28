@@ -5,7 +5,7 @@ var logger       = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser   = require('body-parser');
 var Faye         = require('faye');
-var fayeRedis    = require('faye-redis-sharded');
+var fayeRedis    = require('faye-redis');
 var http         = require('http');
 
 var routes = require('./routes/index');
@@ -65,7 +65,7 @@ var server = http.createServer(),
       //engine: {
       //  type: fayeRedis,
       //  hosts: ['localhost']
-      //}
+    //  }
     });
 
 bayeux.attach(server);
