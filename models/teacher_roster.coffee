@@ -4,13 +4,22 @@ class TeacherRoster
   constructor: ->
     @teachers = {}
 
-  add: (teacher) ->
+  add: (teacher, callback) ->
     @teachers[teacher.id] = teacher
+    @io callback, teacher
 
-  find: (id) ->
-    @teachers[id]
+  find: (id, callback) ->
+    t = @teachers[id]
+    @io callback, t
 
-  length: ->
-    _.keys(@teachers).length
+  stats: (callback) ->
+    length = _.keys(@teachers).length
+    @io callback, length
+
+  io: (callback, result) ->
+    if callback?
+      callback null, result
+
+    null
 
 module.exports = TeacherRoster

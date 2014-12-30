@@ -41,16 +41,15 @@ class PresenceChannel
       @publishStatus()
 
   onClaimStudent: (payload) ->
-    teacher = @teachers.find(payload.teacherId)
+    @teachers.find payload.teacherId, (err, teacher) =>
+      if teacher.students.length < 5
+        @students.next (err, student) =>
+          if student?
+            chat    = @chatLog.new teacher, student
+            channel = new ChatChannel @bayeux, @chatLog, @teachers, @students
+            channel.attach chat.id
 
-    if teacher.students.length < 5
-      @students.next (err, student) =>
-        if student?
-          chat    = @chatLog.new teacher, student
-          channel = new ChatChannel @bayeux, @chatLog, @teachers, @students
-          channel.attach chat.id
-
-          @publishNewChat chat, teacher, student
+            @publishNewChat chat, teacher, student
 
   publishNewChat: (chat, teacher, student) ->
     teacherChannel = "/presence/new_chat/teacher/#{teacher.id}"
@@ -71,14 +70,15 @@ class PresenceChannel
       joinedChannel:    chat.studentChannels.joined
 
   publishStatus: ->
-    @students.stats (err, studentStats) =>
-      data =
-        teachers:
-          total:    @teachers.length()
-        students:   studentStats
-        chats:      @chatLog.stats()
+    @teachers.stats (err, teacherCount) =>
+      @students.stats (err, studentStats) =>
+        data =
+          teachers:
+            total:    teacherCount
+          students:   studentStats
+          chats:      @chatLog.stats()
 
-      @publish '/presence/status', data
+        @publish '/presence/status', data
 
   publish: (channel, data) ->
     @bayeux.getClient().publish channel, data
