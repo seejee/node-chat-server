@@ -50,11 +50,10 @@ class ChatChannel
   onTerminateChat: (payload) ->
     chat = @findChat()
     teacher = @teachers.find chat.teacherId
-    student = @students.find chat.studentId
+    @students.find chat.studentId, (err, student) =>
+      @chatLog.finishChat chat, teacher, student
 
-    @chatLog.finishChat chat, teacher, student
-
-    @publish chat.teacherChannels.terminated, {}
-    @publish chat.studentChannels.terminated, {}
+      @publish chat.teacherChannels.terminated, {}
+      @publish chat.studentChannels.terminated, {}
 
 module.exports = ChatChannel

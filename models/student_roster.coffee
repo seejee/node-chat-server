@@ -4,45 +4,50 @@ class StudentRoster
   constructor: ->
     @students = {}
 
-  add: (student) ->
+  add: (student, callback) ->
     @students[student.id] = student
+    @io callback, student
 
-  find: (studentId) ->
-    @students[studentId]
+  find: (studentId, callback) ->
+    s = @students[studentId]
+    @io callback, s
 
-  remove: (studentId) ->
+  remove: (studentId, callback) ->
     delete @students[studentId]
+    @io callback, studentId
 
-  length: ->
-    _.keys(@students).length
+  next: (callback) ->
+    students = _.values(@students)
+    s = _.find(students, (s) -> s.status is 'waiting')
+    @io callback, s
 
-  stats: ->
+  stats: (callback) ->
     students = _.values(@students)
 
-    {
+    data =
       total:    students.length
-      waiting:  @queued(students).length,
-      chatting: @chatting(students).length,
-      finished: @finished(students).length,
-    }
+      waiting:  @_queued(students).length,
+      chatting: @_chatting(students).length,
+      finished: @_finished(students).length,
 
-  queued: (students) ->
+    @io callback, data
+
+  _queued: (students) ->
     _.chain(students)
      .filter((s) -> s.status is 'waiting')
      .value()
 
-  chatting: (students) ->
+  _chatting: (students) ->
     _.chain(students)
      .filter((s) -> s.status is 'chatting')
      .value()
 
-  finished: (students) ->
+  _finished: (students) ->
     _.chain(students)
      .filter((s) -> s.status is 'finished')
      .value()
 
-  next: ->
-    students = _.values(@students)
-    _.find(students, (s) -> s.status is 'waiting')
+  io: (callback, result) ->
+    callback null, result
 
 module.exports = StudentRoster
