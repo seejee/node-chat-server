@@ -1,36 +1,43 @@
-_ = require 'lodash'
+_     = require 'lodash'
+locks = require 'locks'
 
 class StudentRoster
   constructor: ->
     @students = {}
+    @rwLock = locks.createReadWriteLock()
 
   add: (student, callback) ->
-    @students[student.id] = student
-    @io callback, student
+    @rwLock.writeLock =>
+      @students[student.id] = student
+      @io callback, student
 
   find: (studentId, callback) ->
-    s = @students[studentId]
-    @io callback, s
+    @rwLock.writeLock =>
+      s = @students[studentId]
+      @io callback, s
 
   remove: (studentId, callback) ->
-    delete @students[studentId]
-    @io callback, studentId
+    @rwLock.writeLock =>
+      delete @students[studentId]
+      @io callback, studentId
 
   next: (callback) ->
-    students = _.values(@students)
-    s = _.find(students, (s) -> s.status is 'waiting')
-    @io callback, s
+    @rwLock.writeLock =>
+      students = _.values(@students)
+      s = _.find(students, (s) -> s.status is 'waiting')
+      @io callback, s
 
   stats: (callback) ->
-    students = _.values(@students)
+    @rwLock.readLock =>
+      students = _.values(@students)
 
-    data =
-      total:    students.length
-      waiting:  @_queued(students).length,
-      chatting: @_chatting(students).length,
-      finished: @_finished(students).length,
+      data =
+        total:    students.length
+        waiting:  @_queued(students).length,
+        chatting: @_chatting(students).length,
+        finished: @_finished(students).length,
 
-    @io callback, data
+      @io callback, data
 
   _queued: (students) ->
     _.chain(students)
@@ -48,6 +55,9 @@ class StudentRoster
      .value()
 
   io: (callback, result) ->
-    callback null, result
+    process.nextTick =>
+      if callback?
+        callback null, result
+      @rwLock.unlock()
 
 module.exports = StudentRoster

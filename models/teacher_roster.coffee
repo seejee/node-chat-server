@@ -1,25 +1,30 @@
-_ = require 'lodash'
+_     = require 'lodash'
+locks = require 'locks'
 
 class TeacherRoster
   constructor: ->
     @teachers = {}
+    @rwLock = locks.createReadWriteLock()
 
   add: (teacher, callback) ->
-    @teachers[teacher.id] = teacher
-    @io callback, teacher
+    @rwLock.writeLock =>
+      @teachers[teacher.id] = teacher
+      @io callback, teacher
 
   find: (id, callback) ->
-    t = @teachers[id]
-    @io callback, t
+    @rwLock.writeLock =>
+      t = @teachers[id]
+      @io callback, t
 
   stats: (callback) ->
-    length = _.keys(@teachers).length
-    @io callback, length
+    @rwLock.readLock =>
+      length = _.keys(@teachers).length
+      @io callback, length
 
   io: (callback, result) ->
-    if callback?
-      callback null, result
-
-    null
+    process.nextTick =>
+      if callback?
+        callback null, result
+      @rwLock.unlock()
 
 module.exports = TeacherRoster
