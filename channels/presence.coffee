@@ -45,11 +45,11 @@ class PresenceChannel
       if teacher.students.length < 5
         @students.next (err, student) =>
           if student?
-            chat    = @chatLog.new teacher, student
-            channel = new ChatChannel @bayeux, @chatLog, @teachers, @students
-            channel.attach chat.id
+            @chatLog.new teacher, student, (err, chat) =>
+              channel = new ChatChannel @bayeux, @chatLog, @teachers, @students
+              channel.attach chat.id
 
-            @publishNewChat chat, teacher, student
+              @publishNewChat chat, teacher, student
 
   publishNewChat: (chat, teacher, student) ->
     teacherChannel = "/presence/new_chat/teacher/#{teacher.id}"
@@ -72,13 +72,14 @@ class PresenceChannel
   publishStatus: ->
     @teachers.stats (err, teacherCount) =>
       @students.stats (err, studentStats) =>
-        data =
-          teachers:
-            total:    teacherCount
-          students:   studentStats
-          chats:      @chatLog.stats()
+        @chatLog.stats (err, chatStats) =>
+          data =
+            teachers:
+              total:    teacherCount
+            students:   studentStats
+            chats:      chatStats
 
-        @publish '/presence/status', data
+          @publish '/presence/status', data
 
   publish: (channel, data) ->
     @bayeux.getClient().publish channel, data

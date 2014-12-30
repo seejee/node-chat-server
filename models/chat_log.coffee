@@ -5,7 +5,7 @@ class ChatLog
   constructor: ->
     @chats    = {}
 
-  new: (teacher, student) ->
+  new: (teacher, student, callback) ->
     id   = uuid.v1()
 
     chat =
@@ -35,21 +35,25 @@ class ChatLog
 
     @chats[chat.id] = chat
 
-    chat
+    @io callback, chat
 
-  addTeacherMessage: (chat, message) ->
+  addTeacherMessage: (chat, message, callback) ->
     chat.messages.push
       sender:  'teacher'
       message: message
       timestamp: Date.now()
 
-  addStudentMessage: (chat, message) ->
+    @io callback, chat
+
+  addStudentMessage: (chat, message, callback) ->
     chat.messages.push
       sender:  'student'
       message: message
       timestamp: Date.now()
 
-  finishChat: (chat, teacher, student) ->
+    @io callback, chat
+
+  finishChat: (chat, teacher, student, callback) ->
     chat.status       = 'finished'
 
     student.teacherId = null
@@ -58,13 +62,25 @@ class ChatLog
     index = teacher.students.indexOf(student.id)
     teacher.students.splice index, 1
 
-  find: (id) ->
-    @chats[id]
+    @io callback, chat
 
-  stats: ->
+  find: (id, callback) ->
+    chat = @chats[id]
+    @io callback, chat
+
+  stats: (callback) ->
     chats = _.values(@chats)
 
-    total:    chats.length
-    finished: _.filter(chats, (c) -> c.status is "finsihed").length
+    data =
+      total:    chats.length
+      finished: _.filter(chats, (c) -> c.status is "finsihed").length
+
+    @io callback, data
+
+  io: (callback, result) ->
+    if callback?
+      callback null, result
+
+    null
 
 module.exports = ChatLog
