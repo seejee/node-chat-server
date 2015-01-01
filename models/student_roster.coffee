@@ -21,6 +21,18 @@ class StudentRoster
     s = _.find(students, (s) -> s.status is 'waiting')
     @io callback, s
 
+  assignTo: (studentId, teacherId, callback) ->
+    @find studentId, (err, student) =>
+      student.status    = 'chatting'
+      student.teacherId = teacherId
+      @io callback, student
+
+  chatFinished: (studentId, callback) ->
+    @find studentId, (err, student) =>
+      student.teacherId = null
+      student.status    = 'finished'
+      @io callback, student
+
   stats: (callback) ->
     students = _.values(@students)
 

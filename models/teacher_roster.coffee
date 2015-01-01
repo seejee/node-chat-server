@@ -13,13 +13,29 @@ class TeacherRoster
     @io callback, t
 
   stats: (callback) ->
-    length = _.keys(@teachers).length
-    @io callback, length
+    data =
+      teachers: _.keys(@teachers).length
+
+    @io callback, data
+
+  claimStudent: (teacherId, studentId, callback) ->
+    @find teacherId, (err, teacher) =>
+      teacher.students.push studentId
+      @io callback, teacher
+
+  removeStudent: (teacherId, studentId, callback) ->
+    @find teacherId, (err, teacher) =>
+      index = teacher.students.indexOf(studentId)
+      teacher.students.splice index, 1
+      @io callback, teacher
+
+  canAcceptAnotherStudent: (teacherId, callback) ->
+    @find teacherId, (err, teacher) =>
+      result = teacher.students.length < 5
+      @io callback, result
 
   io: (callback, result) ->
     if callback?
       callback null, result
-
-    null
 
 module.exports = TeacherRoster

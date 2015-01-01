@@ -1,7 +1,7 @@
 _ = require 'lodash'
 
 class ChatChannel
-  constructor: (@bayeux, @chatLog, @teachers, @students) ->
+  constructor: (@bayeux, @chatLog, @chatStarter) ->
     @subs = []
 
   findChat: (callback) ->
@@ -47,10 +47,8 @@ class ChatChannel
 
   onTerminateChat: (payload) ->
     @findChat (err, chat) =>
-      @teachers.find chat.teacherId, (err, teacher) =>
-        @students.find chat.studentId, (err, student) =>
-          @chatLog.finishChat chat, teacher, student, (err, chat) =>
-            @publish chat.teacherChannels.terminated, {}
-            @publish chat.studentChannels.terminated, {}
+      @chatStarter.terminateChat chat, =>
+        @publish chat.teacherChannels.terminated, {}
+        @publish chat.studentChannels.terminated, {}
 
 module.exports = ChatChannel
