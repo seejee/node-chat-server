@@ -1,4 +1,4 @@
-class ChatStarter
+class ChatLifetime
   constructor: (@teachers, @students, @chatLog) ->
 
   createChatForNextStudent: (teacherId, callback) ->
@@ -17,4 +17,4 @@ class ChatStarter
         @chatLog.finishChat chat, (err, chat) =>
           callback null, chat
 
-module.exports = ChatStarter
+module.exports = ChatLifetime

@@ -1,7 +1,7 @@
 TeacherRoster = require '../models/teacher_roster'
 StudentRoster = require '../models/student_roster'
 ChatLog       = require '../models/chat_log'
-ChatStarter   = require '../models/chat_starter'
+ChatLifetime  = require '../models/chat_lifetime'
 
 ChatChannel = require './chat'
 
@@ -10,7 +10,7 @@ class PresenceChannel
     @teachers = new TeacherRoster
     @students = new StudentRoster
     @chatLog  = new ChatLog
-    @chatStarter = new ChatStarter @teachers, @students, @chatLog
+    @chatLifetime = new ChatLifetime @teachers, @students, @chatLog
 
   attach: ->
     @bayeux.getClient().subscribe '/presence/teacher/connect',    @onNewTeacher.bind(this)
@@ -43,8 +43,8 @@ class PresenceChannel
       @publishStatus()
 
   onClaimStudent: (payload) ->
-    @chatStarter.createChatForNextStudent payload.teacherId, (err, chat) =>
-      channel = new ChatChannel @bayeux, @chatLog, @chatStarter
+    @chatLifetime.createChatForNextStudent payload.teacherId, (err, chat) =>
+      channel = new ChatChannel @bayeux, @chatLog, @chatLifetime
       channel.attach chat.id
 
       @publishNewChat chat

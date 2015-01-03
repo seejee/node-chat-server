@@ -1,7 +1,7 @@
 _ = require 'lodash'
 
 class ChatChannel
-  constructor: (@bayeux, @chatLog, @chatStarter) ->
+  constructor: (@bayeux, @chatLog, @chatLifetime) ->
     @subs = []
 
   findChat: (callback) ->
@@ -47,7 +47,7 @@ class ChatChannel
 
   onTerminateChat: (payload) ->
     @findChat (err, chat) =>
-      @chatStarter.terminateChat chat, =>
+      @chatLifetime.terminateChat chat, =>
         @publish chat.teacherChannels.terminated, {}
         @publish chat.studentChannels.terminated, {}
 
