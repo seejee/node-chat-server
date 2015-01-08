@@ -6,17 +6,18 @@ ChatLifetime  = require '../models/chat_lifetime'
 ChatChannel = require './chat'
 
 class PresenceChannel
-  constructor: (@bayeux) ->
+  constructor: (@faye) ->
     @teachers = new TeacherRoster
     @students = new StudentRoster
     @chatLog  = new ChatLog
     @chatLifetime = new ChatLifetime @teachers, @students, @chatLog
 
   attach: ->
-    @bayeux.getClient().subscribe '/presence/teacher/connect',    @onNewTeacher.bind(this)
-    @bayeux.getClient().subscribe '/presence/student/connect',    @onNewStudent.bind(this)
-    @bayeux.getClient().subscribe '/presence/claim_student',      @onClaimStudent.bind(this)
-    @bayeux.getClient().subscribe '/presence/student/disconnect', @onStudentDisconnect.bind(this)
+    client = @faye.getClient()
+    client.subscribe '/presence/teacher/connect',    @onNewTeacher.bind(this)
+    client.subscribe '/presence/student/connect',    @onNewStudent.bind(this)
+    client.subscribe '/presence/claim_student',      @onClaimStudent.bind(this)
+    client.subscribe '/presence/student/disconnect', @onStudentDisconnect.bind(this)
 
   onNewTeacher: (payload) ->
     console.log "Teacher #{payload.userId} arrived."
@@ -44,10 +45,11 @@ class PresenceChannel
 
   onClaimStudent: (payload) ->
     @chatLifetime.createChatForNextStudent payload.teacherId, (err, chat) =>
-      channel = new ChatChannel @bayeux, @chatLog, @chatLifetime
-      channel.attach chat.id
+      if chat
+        channel = new ChatChannel @faye, @chatLog, @chatLifetime
+        channel.attach chat.id
 
-      @publishNewChat chat
+        @publishNewChat chat
 
   publishNewChat: (chat) ->
     teacherChannel = "/presence/new_chat/teacher/#{chat.teacherId}"
@@ -80,6 +82,6 @@ class PresenceChannel
           @publish '/presence/status', data
 
   publish: (channel, data) ->
-    @bayeux.getClient().publish channel, data
+    @faye.getClient().publish channel, data
 
 module.exports = PresenceChannel
