@@ -1,14 +1,11 @@
 _ = require 'lodash'
 
 class ChatChannel
-  constructor: (@bayeux, @chatLog, @chatLifetime) ->
+  constructor: (@faye, @chatLog, @chatLifetime) ->
     @subs = []
 
-  findChat: (callback) ->
-    @chatLog.find @id, callback
-
   attach: (@id) ->
-    @findChat (err, chat) =>
+    @chatLog.find @id, (err, chat) =>
       @subscribe chat.teacherChannels.send, @onTeacherMessage.bind(this)
       @subscribe chat.studentChannels.send, @onStudentMessage.bind(this)
       @subscribe chat.teacherChannels.terminate, @onTerminateChat.bind(this)
@@ -16,39 +13,32 @@ class ChatChannel
       @subscribe chat.teacherChannels.joined, @onTeacherJoined.bind(this)
 
   publish: (channel, data) ->
-    @bayeux.getClient().publish channel, data
+    @faye.getClient().publish channel, data
 
   subscribe: (channel, callback) ->
-    @bayeux.getClient().subscribe channel, callback
+    @faye.getClient().subscribe channel, callback
 
   onTeacherJoined: (payload) ->
-    @findChat (err, chat) =>
-      chat.teacherEntered = true
-
+    @chatLog.teacherEntered @id, (err, chat) =>
       if chat.studentEntered && chat.teacherEntered
         @publish chat.channels.ready, {}
 
   onStudentJoined: (payload) ->
-    @findChat (err, chat) =>
-      chat.studentEntered = true
-
+    @chatLog.studentEntered @id, (err, chat) =>
       if chat.studentEntered && chat.teacherEntered
         @publish chat.channels.ready, {}
 
   onTeacherMessage: (payload) ->
-    @findChat (err, chat) =>
-      @chatLog.addTeacherMessage chat, payload.message
+    @chatLog.addTeacherMessage @id, payload.message, (err, chat) =>
       @publish chat.studentChannels.receive, payload
 
   onStudentMessage: (payload) ->
-    @findChat (err, chat) =>
-      @chatLog.addStudentMessage chat, payload.message
+    @chatLog.addStudentMessage @id, payload.message, (err, chat) =>
       @publish chat.teacherChannels.receive, payload
 
   onTerminateChat: (payload) ->
-    @findChat (err, chat) =>
-      @chatLifetime.terminateChat chat, =>
-        @publish chat.teacherChannels.terminated, {}
-        @publish chat.studentChannels.terminated, {}
+    @chatLifetime.terminateChat @id, (err, chat) =>
+      @publish chat.teacherChannels.terminated, {}
+      @publish chat.studentChannels.terminated, {}
 
 module.exports = ChatChannel

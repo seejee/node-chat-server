@@ -32,25 +32,38 @@ class ChatLog
 
     @io callback, chat
 
-  addTeacherMessage: (chat, message, callback) ->
-    chat.messages.push
-      sender:  'teacher'
-      message: message
-      timestamp: Date.now()
+  studentEntered: (chatId, callback) ->
+    @find chatId, (err, chat) =>
+      chat.studentEntered = true
+      @io callback, chat
 
-    @io callback, chat
+  teacherEntered: (chatId, callback) ->
+    @find chatId, (err, chat) =>
+      chat.teacherEntered = true
+      @io callback, chat
 
-  addStudentMessage: (chat, message, callback) ->
-    chat.messages.push
-      sender:  'student'
-      message: message
-      timestamp: Date.now()
+  addTeacherMessage: (chatId, message, callback) ->
+    @find chatId, (err, chat) =>
+      chat.messages.push
+        sender:  'teacher'
+        message: message
+        timestamp: Date.now()
 
-    @io callback, chat
+      @io callback, chat
 
-  finishChat: (chat, callback) ->
-    chat.status = 'finished'
-    @io callback, chat
+  addStudentMessage: (chatId, message, callback) ->
+    @find chatId, (err, chat) =>
+      chat.messages.push
+        sender:  'student'
+        message: message
+        timestamp: Date.now()
+
+      @io callback, chat
+
+  finishChat: (chatId, callback) ->
+    @find chatId, (err, chat) =>
+      chat.status = 'finished'
+      @io callback, chat
 
   find: (id, callback) ->
     chat = @chats[id]
@@ -68,7 +81,5 @@ class ChatLog
   io: (callback, result) ->
     if callback?
       callback null, result
-
-    null
 
 module.exports = ChatLog
