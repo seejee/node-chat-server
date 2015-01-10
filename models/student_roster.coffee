@@ -60,6 +60,7 @@ class StudentRoster
      .value()
 
   io: (callback, result) ->
-    callback null, result
+    if callback?
+      callback null, result
 
 module.exports = StudentRoster
