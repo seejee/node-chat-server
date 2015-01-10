@@ -61,6 +61,7 @@ class StudentRoster
 
   io: (callback, result) ->
     if callback?
-      callback null, result
+      setImmediate ->
+        callback null, result
 
 module.exports = StudentRoster
