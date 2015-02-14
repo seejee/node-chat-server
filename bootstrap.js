@@ -62,16 +62,18 @@ var server = http.createServer(),
     bayeux = new Faye.NodeAdapter({
       mount: '/faye',
       timeout: 45,
-      //engine: {
-      //  type: fayeRedis,
-      //  hosts: ['localhost']
-    //  }
+      engine: {
+        type: fayeRedis,
+        hosts: ['localhost']
+      }
     });
 
 bayeux.attach(server);
 
+var client = new Faye.Client('http://localhost:4000/faye')
+
 var PresenceChannel = require('./channels/presence');
-new PresenceChannel(bayeux).attach();
+new PresenceChannel(client).attach();
 
 module.exports = {
   app: app,

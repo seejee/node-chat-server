@@ -2,6 +2,7 @@ TeacherRoster = require '../models/teacher_roster'
 StudentRoster = require '../models/student_roster'
 ChatLog       = require '../models/chat_log'
 ChatLifetime  = require '../models/chat_lifetime'
+Q             = require 'q'
 
 ChatChannel = require './chat'
 
@@ -12,12 +13,11 @@ class PresenceChannel
     @chatLog  = new ChatLog
     @chatLifetime = new ChatLifetime @teachers, @students, @chatLog
 
-  attach: ->
-    client = @faye.getClient()
-    client.subscribe '/presence/teacher/connect',    @onNewTeacher.bind(this)
-    client.subscribe '/presence/student/connect',    @onNewStudent.bind(this)
-    client.subscribe '/presence/claim_student',      @onClaimStudent.bind(this)
-    client.subscribe '/presence/student/disconnect', @onStudentDisconnect.bind(this)
+  attach: (callback) ->
+    @faye.subscribe '/presence/teacher/connect',    @onNewTeacher.bind(this)
+    @faye.subscribe '/presence/student/connect',    @onNewStudent.bind(this)
+    @faye.subscribe '/presence/claim_student',      @onClaimStudent.bind(this)
+    @faye.subscribe '/presence/student/disconnect', @onStudentDisconnect.bind(this)
 
   onNewTeacher: (payload) ->
     console.log "Teacher #{payload.userId} arrived."
@@ -47,9 +47,8 @@ class PresenceChannel
     @chatLifetime.createChatForNextStudent payload.teacherId, (err, chat) =>
       if chat
         channel = new ChatChannel @faye, @chatLog, @chatLifetime
-        channel.attach chat.id
-
-        @publishNewChat chat
+        channel.attach chat.id, =>
+          @publishNewChat chat
 
   publishNewChat: (chat) ->
     teacherChannel = "/presence/new_chat/teacher/#{chat.teacherId}"
@@ -82,6 +81,6 @@ class PresenceChannel
           @publish '/presence/status', data
 
   publish: (channel, data) ->
-    @faye.getClient().publish channel, data
+    @faye.publish channel, data
 
 module.exports = PresenceChannel

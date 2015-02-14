@@ -1,22 +1,27 @@
 _ = require 'lodash'
+Q = require 'q'
 
 class ChatChannel
   constructor: (@faye, @chatLog, @chatLifetime) ->
     @subs = []
 
-  attach: (@id) ->
+  attach: (@id, callback) ->
     @chatLog.find @id, (err, chat) =>
-      @subscribe chat.teacherChannels.send, @onTeacherMessage.bind(this)
-      @subscribe chat.studentChannels.send, @onStudentMessage.bind(this)
-      @subscribe chat.teacherChannels.terminate, @onTerminateChat.bind(this)
-      @subscribe chat.studentChannels.joined, @onStudentJoined.bind(this)
-      @subscribe chat.teacherChannels.joined, @onTeacherJoined.bind(this)
+      subs = [
+        @subscribe(chat.teacherChannels.send, @onTeacherMessage.bind(this))
+        @subscribe(chat.studentChannels.send, @onStudentMessage.bind(this))
+        @subscribe(chat.teacherChannels.terminate, @onTerminateChat.bind(this))
+        @subscribe(chat.studentChannels.joined, @onStudentJoined.bind(this))
+        @subscribe(chat.teacherChannels.joined, @onTeacherJoined.bind(this))
+      ]
+
+      Q.all(subs).done(callback)
 
   publish: (channel, data) ->
-    @faye.getClient().publish channel, data
+    @faye.publish channel, data
 
   subscribe: (channel, callback) ->
-    @faye.getClient().subscribe channel, callback
+    @faye.subscribe channel, callback
 
   onTeacherJoined: (payload) ->
     @chatLog.teacherEntered @id, (err, chat) =>
