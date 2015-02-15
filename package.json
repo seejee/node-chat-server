@@ -10,7 +10,7 @@
     "cookie-parser": "~1.3.3",
     "debug": "~2.0.0",
     "express": "~4.9.0",
-    "faye": "~1.0.3",
+    "faye": "~1.1.0",
     "faye-redis": "^0.2.0",
     "faye-redis-sharded": "^0.2.4",
     "jade": "~1.6.0",
