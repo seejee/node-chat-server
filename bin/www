@@ -2,14 +2,12 @@
 var CoffeeScript = require('coffee-script');
 CoffeeScript.register();
 
-var debug = require('debug')('node-server');
+var debug   = require('debug')('node-server');
 var appData = require('../bootstrap');
 
-var app    = appData.app;
-var server = appData.server;
+var app  = appData.app;
+var port = process.env.PORT || 3000;
 
-app.set('port', process.env.PORT || 3000);
-
-server.listen(app.get('port'), function() {
-  debug('Express server listening on port ' + server.address().port);
+app.listen(port, function() {
+  console.log('Express server listening on port: ' + port);
 });

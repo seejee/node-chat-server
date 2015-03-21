@@ -1,48 +1,46 @@
 _ = require 'lodash'
-Q = require 'q'
 
 class ChatChannel
-  constructor: (@faye, @chatLog, @chatLifetime) ->
-    @subs = []
+  constructor: (o) ->
+    @io           = o.io
+    @chatLog      = o.chatLog
+    @chatLifetime = o.chatLifetime
 
-  attach: (@id, callback) ->
-    @chatLog.find @id, (err, chat) =>
-      subs = [
-        @subscribe(chat.teacherChannels.send, @onTeacherMessage.bind(this))
-        @subscribe(chat.studentChannels.send, @onStudentMessage.bind(this))
-        @subscribe(chat.teacherChannels.terminate, @onTerminateChat.bind(this))
-        @subscribe(chat.studentChannels.joined, @onStudentJoined.bind(this))
-        @subscribe(chat.teacherChannels.joined, @onTeacherJoined.bind(this))
-      ]
-
-      Q.all(subs).done(callback)
+  attach: () ->
+    @io.route "chat:teacher:send",      @onTeacherMessage.bind(this)
+    @io.route "chat:teacher:joined",    @onTeacherJoined.bind(this)
+    @io.route "chat:teacher:terminate", @onTerminateChat.bind(this)
+    @io.route "chat:student:send",      @onStudentMessage.bind(this)
+    @io.route "chat:student:joined",    @onStudentJoined.bind(this)
 
   publish: (channel, data) ->
-    @faye.publish channel, data
+    @io.emit channel, data
 
-  subscribe: (channel, callback) ->
-    @faye.subscribe channel, callback
-
-  onTeacherJoined: (payload) ->
-    @chatLog.teacherEntered @id, (err, chat) =>
+  onTeacherJoined: (req) ->
+    payload = req.data
+    @chatLog.teacherEntered payload.chatId, (err, chat) =>
       if chat.studentEntered && chat.teacherEntered
         @publish chat.channels.ready, {}
 
-  onStudentJoined: (payload) ->
-    @chatLog.studentEntered @id, (err, chat) =>
+  onStudentJoined: (req) ->
+    payload = req.data
+    @chatLog.studentEntered payload.chatId, (err, chat) =>
       if chat.studentEntered && chat.teacherEntered
         @publish chat.channels.ready, {}
 
-  onTeacherMessage: (payload) ->
-    @chatLog.addTeacherMessage @id, payload.message, (err, chat) =>
+  onTeacherMessage: (req) ->
+    payload = req.data
+    @chatLog.addTeacherMessage payload.chatId, payload.message, (err, chat) =>
       @publish chat.studentChannels.receive, payload
 
-  onStudentMessage: (payload) ->
-    @chatLog.addStudentMessage @id, payload.message, (err, chat) =>
+  onStudentMessage: (req) ->
+    payload = req.data
+    @chatLog.addStudentMessage payload.chatId, payload.message, (err, chat) =>
       @publish chat.teacherChannels.receive, payload
 
-  onTerminateChat: (payload) ->
-    @chatLifetime.terminateChat @id, (err, chat) =>
+  onTerminateChat: (req) ->
+    payload = req.data
+    @chatLifetime.terminateChat payload.chatId, (err, chat) =>
       @publish chat.teacherChannels.terminated, {}
       @publish chat.studentChannels.terminated, {}
 

@@ -15,18 +15,18 @@ class ChatLog
       status:    'active'
       messages:  []
       channels:
-        ready:     "/chat/#{id}/ready"
+        ready:     "chat:#{id}:ready"
       teacherChannels:
-        send:      "/chat/#{id}/teacher/send"
-        receive:   "/chat/#{id}/teacher/receive"
-        joined:    "/chat/#{id}/teacher/joined"
-        terminate: "/chat/#{id}/teacher/terminate"
-        terminated: "/chat/#{id}/teacher/terminated"
+        send:      "chat:teacher:send"
+        receive:   "chat:#{id}:teacher:receive"
+        joined:    "chat:teacher:joined"
+        terminate: "chat:teacher:terminate"
+        terminated: "chat:#{id}:teacher:terminated"
       studentChannels:
-        send:    "/chat/#{id}/student/send"
-        receive: "/chat/#{id}/student/receive"
-        joined:    "/chat/#{id}/student/joined"
-        terminated: "/chat/#{id}/student/terminated"
+        send:       "chat:student:send"
+        receive:    "chat:#{id}:student:receive"
+        joined:     "chat:student:joined"
+        terminated: "chat:#{id}:student:terminated"
 
     @chats[chat.id] = chat
 
