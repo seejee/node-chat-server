@@ -6,11 +6,14 @@ var ChatLifetime  = require('./models/chat_lifetime');
 var PresenceChannel = require('./channels/presence');
 var ChatChannel = require('./channels/chat');
 
+var redis   = require('redis');
+redis.createClient().flushdb()
+
 var express = require('express.oi')();
 var app     = express.http().io();
 
-var redis = require('socket.io-redis');
-app.io.adapter(redis({ host: 'localhost', port: 6379 }));
+var socketioRedis = require('socket.io-redis');
+app.io.adapter(socketioRedis({ host: 'localhost', port: 6379 }));
 
 var teachers = new TeacherRoster();
 var students = new StudentRoster();
