@@ -3,9 +3,8 @@ var CoffeeScript = require('coffee-script');
 CoffeeScript.register();
 
 var debug   = require('debug')('node-server');
-var appData = require('../bootstrap');
+var app     = require('../bootstrap');
 
-var app  = appData.app;
 var port = process.env.PORT || 3000;
 
 app.listen(port, function() {

@@ -6,8 +6,11 @@ var ChatLifetime  = require('./models/chat_lifetime');
 var PresenceChannel = require('./channels/presence');
 var ChatChannel = require('./channels/chat');
 
-var app = require('express.oi')();
-app.http().io();
+var express = require('express.oi')();
+var app     = express.http().io();
+
+var redis = require('socket.io-redis');
+app.io.adapter(redis({ host: 'localhost', port: 6379 }));
 
 var teachers = new TeacherRoster();
 var students = new StudentRoster();
@@ -15,7 +18,7 @@ var chatLog  = new ChatLog();
 var chatLifetime = new ChatLifetime(teachers, students, chatLog);
 
 new PresenceChannel({
-  io: app.io,
+  io: express.io,
   teachers: teachers,
   students: students,
   chatLog:  chatLog,
@@ -23,11 +26,9 @@ new PresenceChannel({
 }).attach();
 
 new ChatChannel({
-  io: app.io,
+  io: express.io,
   chatLog:  chatLog,
   chatLifetime: chatLifetime
 }).attach();
 
-module.exports = {
-  app: app,
-};
+module.exports = app;
