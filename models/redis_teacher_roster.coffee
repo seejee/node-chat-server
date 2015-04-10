@@ -27,16 +27,14 @@ class RedisTeacherRoster
     @find teacherId, (err, teacher) =>
       teacher.students.push studentId
 
-      @save teacher, (err) ->
-        callback(err, teacher) if callback?
+      @save teacher, callback
 
   removeStudent: (teacherId, studentId, callback) ->
     @find teacherId, (err, teacher) =>
       index = teacher.students.indexOf(studentId)
       teacher.students.splice index, 1
 
-      @save teacher, (err) ->
-        callback(err, teacher) if callback?
+      @save teacher, callback
 
   canAcceptAnotherStudent: (teacherId, callback) ->
     @find teacherId, (err, teacher) =>
