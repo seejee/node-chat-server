@@ -6,12 +6,11 @@ var ChatLifetime  = require('./models/chat_lifetime');
 var PresenceChannel = require('./channels/presence');
 var ChatChannel = require('./channels/chat');
 
-var Redlock = require('multiredlock');
 var redis   = require('redis');
-redis.createClient().flushdb()
+var client  = redis.createClient();
+client.flushdb()
 
-var redlock = new Redlock([{host:'localhost', port:6379}]);
-redlock.setRetry(10, 100);
+var lock    = require('redis-lock')(client);
 
 var express = require('express.oi')();
 var app     = express.http().io();
@@ -21,8 +20,8 @@ app.io.adapter(socketioRedis({ host: 'localhost', port: 6379 }));
 
 var teachers = new TeacherRoster();
 var students = new StudentRoster();
-var chatLog  = new ChatLog(redlock);
-var chatLifetime = new ChatLifetime(teachers, students, chatLog, redlock);
+var chatLog  = new ChatLog(lock);
+var chatLifetime = new ChatLifetime(teachers, students, chatLog, lock);
 
 new PresenceChannel({
   io: express.io,

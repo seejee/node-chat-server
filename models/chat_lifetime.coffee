@@ -1,11 +1,10 @@
-locks = require "locks"
+TIMEOUT = 1000
 
 class ChatLifetime
-  constructor: (@teachers, @students, @chatLog) ->
-    @mutex = locks.createMutex()
+  constructor: (@teachers, @students, @chatLog, @mutex) ->
 
   createChatForNextStudent: (teacherId, callback) ->
-    @mutex.lock =>
+    @mutex 'lock:chat:queue', (done) =>
       @teachers.canAcceptAnotherStudent teacherId, (err, canAccept) =>
         if canAccept
           @students.next (err, student) =>
@@ -13,22 +12,23 @@ class ChatLifetime
               @students.assignTo student.id, teacherId, =>
                 @teachers.claimStudent teacherId, student.id, =>
                   @chatLog.new teacherId, student.id, (err, chat) =>
+                    console.log "Assigned student #{student.id} to teacher #{teacherId}..."
+                    done()
                     callback null, chat
-                    @mutex.unlock()
             else
+              done()
               callback null, null
-              @mutex.unlock()
         else
+          done()
           callback null, null
-          @mutex.unlock()
 
 
   terminateChat: (chatId, callback) ->
-    @mutex.lock =>
+    @mutex 'lock:chat:finish', (done) =>
       @chatLog.finishChat chatId, (err, chat) =>
         @students.chatFinished chat.studentId, (err) =>
           @teachers.removeStudent chat.teacherId, chat.studentId, (err) =>
+            done()
             callback null, chat
-            @mutex.unlock()
 
 module.exports = ChatLifetime

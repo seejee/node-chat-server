@@ -1,8 +1,6 @@
 redis = require 'redis'
 uuid  = require 'node-uuid'
 
-TIMEOUT = 1000
-
 class RedisChatLog
   constructor: (@mutex) ->
     @client      = redis.createClient()
@@ -46,23 +44,23 @@ class RedisChatLog
     @save chat, callback
 
   studentEntered: (chatId, callback) ->
-    @mutex.lock chatId, TIMEOUT, (err, lock) =>
+    @mutex chatId, (done) =>
       @find chatId, (err, chat) =>
         chat.studentEntered = true
         @save chat, (err, chat) =>
           callback(err, chat)
-          @mutex.unlock chatId, lock.value
+          done()
 
   teacherEntered: (chatId, callback) ->
-    @mutex.lock chatId, TIMEOUT, (err, lock) =>
+    @mutex chatId, (done) =>
       @find chatId, (err, chat) =>
         chat.teacherEntered = true
         @save chat, (err, chat) =>
           callback(err, chat)
-          @mutex.unlock chatId, lock.value
+          done()
 
   addTeacherMessage: (chatId, message, callback) ->
-    @mutex.lock chatId, TIMEOUT, (err, lock) =>
+    @mutex chatId, (done) =>
       @find chatId, (err, chat) =>
         chat.messages.push
           sender:  'teacher'
@@ -71,10 +69,10 @@ class RedisChatLog
 
         @save chat, (err, chat) =>
           callback(err, chat)
-          @mutex.unlock chatId, lock.value
+          done()
 
   addStudentMessage: (chatId, message, callback) ->
-    @mutex.lock chatId, TIMEOUT, (err, lock) =>
+    @mutex chatId, (done) =>
       @find chatId, (err, chat) =>
         chat.messages.push
           sender:  'student'
@@ -83,10 +81,10 @@ class RedisChatLog
 
         @save chat, (err, chat) =>
           callback(err, chat)
-          @mutex.unlock chatId, lock.value
+          done()
 
   finishChat: (chatId, callback) ->
-    @mutex.lock chatId, TIMEOUT, (err, lock) =>
+    @mutex chatId, (done) =>
       @find chatId, (err, chat) =>
         @client.rpush @finishedKey, chatId
 
@@ -94,7 +92,7 @@ class RedisChatLog
 
         @save chat, (err, chat) =>
           callback(err, chat)
-          @mutex.unlock chatId, lock.value
+          done()
 
   stats: (callback) ->
     @client.hlen @key, (err, chats) =>
