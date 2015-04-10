@@ -6,7 +6,7 @@ class ChatLog
     @chats    = {}
 
   new: (teacherId, studentId, callback) ->
-    id   = uuid.v1()
+    id   = uuid.v4()
 
     chat =
       id:        id
@@ -80,6 +80,7 @@ class ChatLog
 
   io: (callback, result) ->
     if callback?
-      callback null, result
+      setImmediate ->
+        callback null, result
 
 module.exports = ChatLog
