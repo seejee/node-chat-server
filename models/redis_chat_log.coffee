@@ -1,13 +1,13 @@
 redis = require 'redis'
 uuid  = require 'node-uuid'
-locks = require "locks"
+
+TIMEOUT = 1000
 
 class RedisChatLog
-  constructor: ->
+  constructor: (@mutex) ->
     @client      = redis.createClient()
     @key         = 'chats'
     @finishedKey = 'chats:finished'
-    @mutex       = locks.createMutex()
 
   add: (chat, callback) ->
     @save chat, callback
@@ -46,23 +46,23 @@ class RedisChatLog
     @save chat, callback
 
   studentEntered: (chatId, callback) ->
-    @mutex.lock =>
+    @mutex.lock chatId, TIMEOUT, (err, lock) =>
       @find chatId, (err, chat) =>
         chat.studentEntered = true
         @save chat, (err, chat) =>
           callback(err, chat)
-          @mutex.unlock()
+          @mutex.unlock chatId, lock.value
 
   teacherEntered: (chatId, callback) ->
-    @mutex.lock =>
+    @mutex.lock chatId, TIMEOUT, (err, lock) =>
       @find chatId, (err, chat) =>
         chat.teacherEntered = true
         @save chat, (err, chat) =>
           callback(err, chat)
-          @mutex.unlock()
+          @mutex.unlock chatId, lock.value
 
   addTeacherMessage: (chatId, message, callback) ->
-    @mutex.lock =>
+    @mutex.lock chatId, TIMEOUT, (err, lock) =>
       @find chatId, (err, chat) =>
         chat.messages.push
           sender:  'teacher'
@@ -71,10 +71,10 @@ class RedisChatLog
 
         @save chat, (err, chat) =>
           callback(err, chat)
-          @mutex.unlock()
+          @mutex.unlock chatId, lock.value
 
   addStudentMessage: (chatId, message, callback) ->
-    @mutex.lock =>
+    @mutex.lock chatId, TIMEOUT, (err, lock) =>
       @find chatId, (err, chat) =>
         chat.messages.push
           sender:  'student'
@@ -83,10 +83,10 @@ class RedisChatLog
 
         @save chat, (err, chat) =>
           callback(err, chat)
-          @mutex.unlock()
+          @mutex.unlock chatId, lock.value
 
   finishChat: (chatId, callback) ->
-    @mutex.lock =>
+    @mutex.lock chatId, TIMEOUT, (err, lock) =>
       @find chatId, (err, chat) =>
         @client.rpush @finishedKey, chatId
 
@@ -94,7 +94,7 @@ class RedisChatLog
 
         @save chat, (err, chat) =>
           callback(err, chat)
-          @mutex.unlock()
+          @mutex.unlock chatId, lock.value
 
   stats: (callback) ->
     @client.hlen @key, (err, chats) =>
