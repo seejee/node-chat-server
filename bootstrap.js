@@ -1,4 +1,4 @@
-var TeacherRoster = require('./models/teacher_roster');
+var TeacherRoster = require('./models/redis_teacher_roster');
 var StudentRoster = require('./models/student_roster');
 var ChatLog       = require('./models/chat_log');
 var ChatLifetime  = require('./models/chat_lifetime');
