@@ -1,6 +1,6 @@
 var TeacherRoster = require('./models/redis_teacher_roster');
 var StudentRoster = require('./models/redis_student_roster');
-var ChatLog       = require('./models/chat_log');
+var ChatLog       = require('./models/redis_chat_log');
 var ChatLifetime  = require('./models/chat_lifetime');
 
 var PresenceChannel = require('./channels/presence');
